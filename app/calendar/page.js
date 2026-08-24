@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ChevronLeft, ChevronRight, Trash2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Trash2, MapPin, Clock } from "lucide-react";
 import { useAuth } from "@/lib/useAuth";
 import { supabase } from "@/lib/supabaseClient";
 import { DEPARTMENT_LIST } from "@/lib/departments";
@@ -26,6 +26,12 @@ function prettyDate(key) {
   const d = new Date(key + "T00:00:00");
   return d.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric", year: "numeric" });
 }
+function shortDate(key) {
+  const d = new Date(key + "T00:00:00");
+  return d.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
+}
+
+const emptyEntry = { title: "", department: "", location: "", entry_time: "", notes: "" };
 
 export default function CalendarPage() {
   const { profile, loading, can } = useAuth();
@@ -33,7 +39,8 @@ export default function CalendarPage() {
   const [selectedDate, setSelectedDate] = useState(todayKey());
   const [customEntries, setCustomEntries] = useState([]);
   const [eventEntries, setEventEntries] = useState([]);
-  const [newEntry, setNewEntry] = useState({ title: "", department: "" });
+  const [newEntry, setNewEntry] = useState(emptyEntry);
+  const [showForm, setShowForm] = useState(false);
 
   const load = async () => {
     const { data: custom } = await supabase.from("calendar_events").select("*").order("entry_date");
@@ -52,11 +59,15 @@ export default function CalendarPage() {
       title: newEntry.title.trim(),
       entry_date: selectedDate,
       department: newEntry.department || null,
+      location: newEntry.location.trim() || null,
+      entry_time: newEntry.entry_time.trim() || null,
+      notes: newEntry.notes.trim() || null,
       created_by: profile.id,
     };
     const { data } = await supabase.from("calendar_events").insert(payload).select().single();
     if (data) setCustomEntries([...customEntries, data]);
-    setNewEntry({ title: "", department: "" });
+    setNewEntry(emptyEntry);
+    setShowForm(false);
   };
 
   const deleteEntry = async (id) => {
@@ -68,15 +79,29 @@ export default function CalendarPage() {
     return <div className="min-h-screen flex items-center justify-center text-sm text-inksoft">Loading…</div>;
   }
 
-  // Merge both sources into one lookup: dateKey -> [{title, color, source}]
   const allEntries = {};
   customEntries.forEach((e) => {
     const list = (allEntries[e.entry_date] ||= []);
-    list.push({ id: e.id, title: e.title, color: DOT_COLORS[e.department] || DOT_COLORS.general, source: "custom", raw: e });
+    list.push({
+      id: e.id,
+      title: e.title,
+      color: DOT_COLORS[e.department] || DOT_COLORS.general,
+      source: "custom",
+      location: e.location,
+      time: e.entry_time,
+      notes: e.notes,
+      date: e.entry_date,
+    });
   });
   eventEntries.forEach((e) => {
     const list = (allEntries[e.event_date] ||= []);
-    list.push({ id: e.id, title: e.name, color: DOT_COLORS[e.department] || DOT_COLORS.general, source: "event" });
+    list.push({
+      id: e.id,
+      title: e.name,
+      color: DOT_COLORS[e.department] || DOT_COLORS.general,
+      source: "event",
+      date: e.event_date,
+    });
   });
 
   const year = viewDate.getFullYear();
@@ -92,11 +117,31 @@ export default function CalendarPage() {
   const selectedEntries = allEntries[selectedDate] || [];
   const editableDepartments = DEPARTMENT_LIST.filter((d) => can(d.slug));
 
+  const upcoming = Object.values(allEntries)
+    .flat()
+    .filter((e) => e.date >= todayKey())
+    .sort((a, b) => (a.date === b.date ? (a.time || "").localeCompare(b.time || "") : a.date.localeCompare(b.date)))
+    .slice(0, 8);
+
   return (
     <div className="min-h-screen">
       <Nav profile={profile} can={can} />
       <div className="max-w-2xl mx-auto px-4 sm:px-6 py-8">
         <div className="font-display text-2xl font-semibold text-ink mb-4">Calendar</div>
+
+        <div className="font-display text-base font-medium text-ink mb-2">Upcoming</div>
+        <div className="space-y-1.5 mb-6">
+          {upcoming.length === 0 && <div className="text-sm text-inksoft">Nothing coming up yet.</div>}
+          {upcoming.map((e) => (
+            <div key={e.id + e.source} className="flex items-center gap-2 bg-card border border-line rounded-lg px-3 py-2">
+              <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: e.color }} />
+              <span className="text-xs text-inksoft w-20 flex-shrink-0">{shortDate(e.date)}</span>
+              <span className="text-sm flex-1 text-ink">{e.title}</span>
+              {e.time && <span className="text-xs text-inksoft flex items-center gap-0.5"><Clock size={11} />{e.time}</span>}
+              {e.location && <span className="text-xs text-inksoft flex items-center gap-0.5"><MapPin size={11} />{e.location}</span>}
+            </div>
+          ))}
+        </div>
 
         <div className="bg-card border border-line rounded-xl p-4 mb-5">
           <div className="flex items-center justify-between mb-3">
@@ -124,7 +169,10 @@ export default function CalendarPage() {
               return (
                 <button
                   key={i}
-                  onClick={() => setSelectedDate(key)}
+                  onClick={() => {
+                    setSelectedDate(key);
+                    setShowForm(false);
+                  }}
                   className={`aspect-square rounded-lg text-xs flex flex-col items-center justify-center gap-0.5 ${
                     isSelected ? "bg-ink text-cream" : isToday ? "border border-ink text-ink" : "text-ink hover:bg-line/40"
                   }`}
@@ -149,44 +197,86 @@ export default function CalendarPage() {
         <div className="space-y-1.5 mb-4">
           {selectedEntries.length === 0 && <div className="text-sm text-inksoft">Nothing on the calendar this day.</div>}
           {selectedEntries.map((e) => (
-            <div key={e.id + e.source} className="flex items-center gap-2 bg-card border border-line rounded-lg px-3 py-2">
-              <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: e.color }} />
-              <span className="text-sm flex-1 text-ink">{e.title}</span>
-              {e.source === "event" ? (
-                <span className="text-xs text-inksoft">from department page</span>
-              ) : (
-                <button onClick={() => deleteEntry(e.id)} className="text-inksoft">
-                  <Trash2 size={13} />
-                </button>
+            <div key={e.id + e.source} className="bg-card border border-line rounded-lg px-3 py-2">
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: e.color }} />
+                <span className="text-sm flex-1 text-ink">{e.title}</span>
+                {e.source === "event" ? (
+                  <span className="text-xs text-inksoft">from department page</span>
+                ) : (
+                  <button onClick={() => deleteEntry(e.id)} className="text-inksoft">
+                    <Trash2 size={13} />
+                  </button>
+                )}
+              </div>
+              {(e.time || e.location) && (
+                <div className="flex gap-3 text-xs text-inksoft mt-1 ml-4">
+                  {e.time && <span className="flex items-center gap-1"><Clock size={11} />{e.time}</span>}
+                  {e.location && <span className="flex items-center gap-1"><MapPin size={11} />{e.location}</span>}
+                </div>
               )}
+              {e.notes && <div className="text-xs text-inksoft mt-1 ml-4">{e.notes}</div>}
             </div>
           ))}
         </div>
 
-        <div className="flex gap-2">
-          <select
-            value={newEntry.department}
-            onChange={(e) => setNewEntry({ ...newEntry, department: e.target.value })}
-            className="text-xs rounded-lg px-2 border border-line"
-          >
-            <option value="">General</option>
-            {editableDepartments.map((d) => (
-              <option key={d.slug} value={d.slug}>
-                {d.label}
-              </option>
-            ))}
-          </select>
-          <input
-            value={newEntry.title}
-            onChange={(e) => setNewEntry({ ...newEntry, title: e.target.value })}
-            onKeyDown={(e) => e.key === "Enter" && addEntry()}
-            placeholder={`Add something for ${prettyDate(selectedDate)}`}
-            className="flex-1 text-sm rounded-lg px-3 py-2 border border-line"
-          />
-          <button onClick={addEntry} className="text-sm px-4 rounded-lg text-white bg-ink">
-            Add
+        {!showForm ? (
+          <button onClick={() => setShowForm(true)} className="text-sm px-4 py-2 rounded-lg border border-line text-inksoft">
+            + Add something for {shortDate(selectedDate)}
           </button>
-        </div>
+        ) : (
+          <div className="bg-card border border-line rounded-xl p-3 space-y-2">
+            <div className="flex gap-2">
+              <select
+                value={newEntry.department}
+                onChange={(e) => setNewEntry({ ...newEntry, department: e.target.value })}
+                className="text-xs rounded-lg px-2 border border-line"
+              >
+                <option value="">General</option>
+                {editableDepartments.map((d) => (
+                  <option key={d.slug} value={d.slug}>
+                    {d.label}
+                  </option>
+                ))}
+              </select>
+              <input
+                value={newEntry.title}
+                onChange={(e) => setNewEntry({ ...newEntry, title: e.target.value })}
+                placeholder="What is it?"
+                className="flex-1 text-sm rounded-lg px-3 py-2 border border-line"
+              />
+            </div>
+            <div className="flex gap-2">
+              <input
+                value={newEntry.entry_time}
+                onChange={(e) => setNewEntry({ ...newEntry, entry_time: e.target.value })}
+                placeholder="Time (e.g. 2:00 PM)"
+                className="flex-1 text-xs rounded-lg px-2 py-1.5 border border-line"
+              />
+              <input
+                value={newEntry.location}
+                onChange={(e) => setNewEntry({ ...newEntry, location: e.target.value })}
+                placeholder="Location"
+                className="flex-1 text-xs rounded-lg px-2 py-1.5 border border-line"
+              />
+            </div>
+            <textarea
+              value={newEntry.notes}
+              onChange={(e) => setNewEntry({ ...newEntry, notes: e.target.value })}
+              placeholder="Notes"
+              rows={2}
+              className="w-full text-xs rounded-lg px-2 py-1.5 border border-line resize-none"
+            />
+            <div className="flex gap-2">
+              <button onClick={addEntry} className="text-sm px-4 py-1.5 rounded-lg text-white bg-ink">
+                Add
+              </button>
+              <button onClick={() => { setShowForm(false); setNewEntry(emptyEntry); }} className="text-sm px-4 py-1.5 rounded-lg text-inksoft">
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
