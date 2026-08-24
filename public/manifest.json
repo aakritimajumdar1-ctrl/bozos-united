@@ -1,0 +1,9 @@
+{
+  "name": "Bozos United",
+  "short_name": "Bozos United",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FAF5EC",
+  "theme_color": "#FAF5EC",
+  "icons": []
+}
