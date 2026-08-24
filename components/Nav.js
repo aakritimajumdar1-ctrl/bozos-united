@@ -17,6 +17,7 @@ export default function Nav({ profile, can }) {
   const links = [
     { href: "/", label: "Home" },
     ...DEPARTMENT_LIST.filter((d) => can(d.slug)).map((d) => ({ href: `/${d.slug}`, label: d.label })),
+    { href: "/calendar", label: "Calendar" },
     ...(can("guests") ? [{ href: "/guests", label: "Guest list" }] : []),
     ...(can("budget") ? [{ href: "/budget", label: "Budget" }] : []),
     ...(can("prep") ? [{ href: "/prep", label: "Wedding prep" }] : []),
