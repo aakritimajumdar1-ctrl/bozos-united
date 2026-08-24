@@ -103,16 +103,26 @@ export default function HubPage() {
             <Link
               key={d.slug}
               href={`/${d.slug}`}
-              className="flex items-center gap-4 px-1 py-4 border-t border-line last:border-b hover:bg-white/40"
+              className="flex items-center gap-4 px-1 py-4 border-t border-line hover:bg-white/40"
             >
               <d.Icon className={d.textClass} size={20} />
               <div className="flex-1 font-display text-base font-medium text-ink">{d.label}</div>
               <ArrowRight className="text-inksoft" size={16} />
             </Link>
           ))}
+          {can("prep") && (
+            <Link
+              href="/prep"
+              className="flex items-center gap-4 px-1 py-4 border-t border-b border-line hover:bg-white/40"
+            >
+              <Sparkles className="text-prep" size={20} />
+              <div className="flex-1 font-display text-base font-medium text-ink">Wedding prep</div>
+              <ArrowRight className="text-inksoft" size={16} />
+            </Link>
+          )}
         </div>
 
-        {visibleDepartments.length === 0 && (
+        {visibleDepartments.length === 0 && !can("prep") && (
           <p className="text-sm text-inksoft text-center mt-6">
             No sections are turned on for your account yet — ask Aakriti or Riley to grant access from Admin.
           </p>
