@@ -68,6 +68,12 @@ export default function HubPage() {
           <div className="text-sm text-inksoft">Bozos united</div>
         </div>
 
+        <div className="flex gap-2 mb-8">
+          <Link href="/calendar" className="flex-1 bg-card border border-line rounded-xl p-4 hover:border-inksoft text-center">
+            <div className="text-sm font-medium text-ink">Open calendar</div>
+          </Link>
+        </div>
+
         {(can("guests") || can("budget")) && (
           <div className="grid grid-cols-2 gap-3 mb-8">
             {can("guests") && (
