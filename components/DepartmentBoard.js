@@ -2,17 +2,11 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Plus, Trash2, Star, Upload } from "lucide-react";
+import { Plus, Trash2, Star, Upload, Users } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
+import { eventIcon, ITEM_TYPE_META } from "@/lib/visualMeta";
 
-const ITEM_TYPES = [
-  { value: "venue", label: "Venue" },
-  { value: "vendor", label: "Vendor" },
-  { value: "attire", label: "Attire" },
-  { value: "food", label: "Food" },
-  { value: "performance", label: "Performance" },
-  { value: "other", label: "Other" },
-];
+const ITEM_TYPES = Object.entries(ITEM_TYPE_META).map(([value, meta]) => ({ value, label: meta.label }));
 
 function money(n) {
   return "$" + (Number(n) || 0).toLocaleString();
@@ -29,6 +23,7 @@ async function uploadAttireImage(file) {
 function ItemRow({ item, accentClass, onUpdate, onDelete }) {
   const [uploading, setUploading] = useState(false);
   const [notes, setNotes] = useState(item.notes || "");
+  const meta = ITEM_TYPE_META[item.item_type] || ITEM_TYPE_META.other;
 
   const handleFile = async (e) => {
     const file = e.target.files?.[0];
@@ -44,12 +39,22 @@ function ItemRow({ item, accentClass, onUpdate, onDelete }) {
   };
 
   return (
-    <div className="border border-line rounded-lg p-3 mb-2 bg-white">
+    <div
+      className="rounded-lg p-3 mb-2 bg-white shadow-sm"
+      style={{ borderLeft: `4px solid ${meta.hex}`, border: "1px solid #E9E0D2", borderLeftWidth: "4px", borderLeftColor: meta.hex }}
+    >
       <div className="flex items-start gap-2 mb-2">
+        <div
+          className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5"
+          style={{ backgroundColor: meta.soft }}
+        >
+          <meta.Icon size={13} style={{ color: meta.hex }} />
+        </div>
         <select
           value={item.item_type}
           onChange={(e) => onUpdate({ item_type: e.target.value })}
-          className="text-xs rounded-md px-1.5 py-1 border border-line"
+          className="text-xs rounded-md px-1.5 py-1 border-none font-medium"
+          style={{ backgroundColor: meta.soft, color: meta.hex }}
         >
           {ITEM_TYPES.map((t) => (
             <option key={t.value} value={t.value}>
@@ -61,15 +66,15 @@ function ItemRow({ item, accentClass, onUpdate, onDelete }) {
           value={item.name}
           onChange={(e) => onUpdate({ name: e.target.value })}
           placeholder="Name"
-          className="flex-1 text-sm font-medium bg-transparent outline-none"
+          className="flex-1 text-sm font-medium bg-transparent outline-none mt-1"
         />
-        <button onClick={onDelete} aria-label="Delete item" className="text-inksoft">
+        <button onClick={onDelete} aria-label="Delete item" className="text-inksoft mt-1.5">
           <Trash2 size={14} />
         </button>
       </div>
 
       {item.item_type === "attire" && (
-        <div className="mb-2">
+        <div className="mb-2 ml-8">
           <input
             value={item.person || ""}
             onChange={(e) => onUpdate({ person: e.target.value })}
@@ -87,7 +92,7 @@ function ItemRow({ item, accentClass, onUpdate, onDelete }) {
         </div>
       )}
 
-      <div className="grid grid-cols-2 gap-2 mb-2">
+      <div className="grid grid-cols-2 gap-2 mb-2 ml-8">
         <input
           value={item.link || ""}
           onChange={(e) => onUpdate({ link: e.target.value })}
@@ -103,11 +108,13 @@ function ItemRow({ item, accentClass, onUpdate, onDelete }) {
         />
       </div>
 
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 ml-8">
         <select
           value={item.status}
           onChange={(e) => onUpdate({ status: e.target.value })}
-          className="text-xs rounded-md px-1.5 py-1 border border-line"
+          className={`text-xs rounded-md px-1.5 py-1 border ${
+            item.status === "booked" ? "border-honeymoon text-honeymoon bg-honeymoon-soft" : "border-line text-inksoft"
+          }`}
         >
           <option value="considering">Considering</option>
           <option value="booked">Booked</option>
@@ -131,17 +138,19 @@ function ItemRow({ item, accentClass, onUpdate, onDelete }) {
         onBlur={() => onUpdate({ notes })}
         placeholder="Notes — measurements, contact person, what you liked, anything..."
         rows={2}
-        className="w-full text-xs rounded-md px-2 py-1.5 border border-line resize-none mt-2"
+        className="w-full text-xs rounded-md px-2 py-1.5 border border-line resize-none mt-2 ml-8"
+        style={{ width: "calc(100% - 2rem)" }}
       />
     </div>
   );
 }
 
-function EventCard({ event, department, theme, guestCount }) {
+function EventCard({ event, theme, guestCount, tint }) {
   const [items, setItems] = useState([]);
   const [todos, setTodos] = useState([]);
   const [newTodo, setNewTodo] = useState("");
   const [notes, setNotes] = useState(event.notes || "");
+  const EventIcon = eventIcon(event.name);
 
   const load = async () => {
     const { data: itemData } = await supabase
@@ -167,7 +176,7 @@ function EventCard({ event, department, theme, guestCount }) {
     const competingConsidering = items.filter(
       (i) => i.item_type === defaultType && i.status === "considering"
     );
-    const shouldAutoLead = competingConsidering.length === 0; // first option of its kind counts automatically
+    const shouldAutoLead = competingConsidering.length === 0;
     const { data } = await supabase
       .from("event_items")
       .insert({
@@ -225,17 +234,36 @@ function EventCard({ event, department, theme, guestCount }) {
   const booked = items.reduce((s, i) => (i.status === "booked" ? s + (Number(i.cost) || 0) : s), 0);
 
   return (
-    <div className="bg-card border border-line rounded-xl p-4 mb-4">
-      <div className="flex items-center justify-between mb-3">
-        <div className="font-display text-lg font-semibold text-ink">{event.name}</div>
-        <Link href={`/guests?event=${event.id}`} className="text-xs text-inksoft underline">
-          {guestCount} invited
+    <div
+      className="rounded-2xl p-4 mb-5"
+      style={{
+        background: tint ? `linear-gradient(160deg, ${theme.softHex} 0%, #FFFFFF 55%)` : "#FFFFFF",
+        border: `1px solid ${theme.hex}2a`,
+        borderTop: `3px solid ${theme.hex}`,
+        boxShadow: "0 3px 16px rgba(74,27,12,0.06)",
+      }}
+    >
+      <div className="flex items-center gap-3 mb-3">
+        <div className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: theme.hex }}>
+          <EventIcon size={16} color="#FFFFFF" />
+        </div>
+        <div className="font-display text-lg font-semibold flex-1" style={{ color: theme.deepHex }}>
+          {event.name}
+        </div>
+        <Link
+          href={`/guests?event=${event.id}`}
+          className="text-xs flex items-center gap-1 px-2 py-1 rounded-full flex-shrink-0"
+          style={{ backgroundColor: theme.softHex, color: theme.hex }}
+        >
+          <Users size={11} /> {guestCount}
         </Link>
       </div>
 
-      <div className="flex gap-4 text-xs text-inksoft mb-3 font-mono">
-        <span>Projected {money(projected)}</span>
-        <span>Booked {money(booked)}</span>
+      <div className="flex gap-2 text-xs mb-3 font-mono">
+        <span className="px-2 py-1 rounded-full bg-honeymoon-soft text-honeymoon">Booked {money(booked)}</span>
+        <span className="px-2 py-1 rounded-full" style={{ backgroundColor: theme.softHex, color: theme.hex }}>
+          Projected {money(projected)}
+        </span>
       </div>
 
       {items.map((item) => (
@@ -249,13 +277,14 @@ function EventCard({ event, department, theme, guestCount }) {
       ))}
       <button
         onClick={addItem}
-        className={`w-full text-xs py-2 rounded-lg border border-dashed mb-3 ${theme.textClass} border-current`}
+        className="w-full text-xs py-2 rounded-lg border border-dashed mb-3"
+        style={{ borderColor: theme.hex, color: theme.hex }}
       >
         <Plus size={12} className="inline -mt-0.5 mr-1" />
         Add venue, vendor, attire, food, or performance
       </button>
 
-      <div className="border-t border-line pt-2 mb-2">
+      <div className="border-t pt-2 mb-2" style={{ borderColor: `${theme.hex}22` }}>
         {todos.map((t) => (
           <div key={t.id} className="flex items-center gap-2 py-1">
             <input type="checkbox" checked={t.done} onChange={(e) => toggleTodo(t.id, e.target.checked)} />
@@ -285,7 +314,7 @@ function EventCard({ event, department, theme, guestCount }) {
         onBlur={saveNotes}
         placeholder="Notes for this event..."
         rows={2}
-        className="w-full text-sm rounded-md px-2 py-1.5 border border-line resize-none"
+        className="w-full text-sm rounded-md px-2 py-1.5 border border-line resize-none bg-white/70"
       />
     </div>
   );
@@ -334,8 +363,14 @@ export default function DepartmentBoard({ department, theme }) {
 
   return (
     <div>
-      {events.map((ev) => (
-        <EventCard key={ev.id} event={ev} department={department} theme={theme} guestCount={guestCounts[ev.id] || 0} />
+      {events.map((ev, idx) => (
+        <EventCard
+          key={ev.id}
+          event={ev}
+          theme={theme}
+          guestCount={guestCounts[ev.id] || 0}
+          tint={idx % 2 === 1}
+        />
       ))}
       <div className="flex gap-2">
         <input
@@ -345,7 +380,7 @@ export default function DepartmentBoard({ department, theme }) {
           placeholder="Add a new event for this wedding"
           className="flex-1 text-sm rounded-lg px-3 py-2 border border-line"
         />
-        <button onClick={addEvent} className={`text-sm px-4 rounded-lg text-white bg-ink`}>
+        <button onClick={addEvent} className="text-sm px-4 rounded-lg text-white" style={{ backgroundColor: theme.hex }}>
           Add
         </button>
       </div>
