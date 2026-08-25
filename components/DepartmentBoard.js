@@ -28,6 +28,7 @@ async function uploadAttireImage(file) {
 
 function ItemRow({ item, accentClass, onUpdate, onDelete }) {
   const [uploading, setUploading] = useState(false);
+  const [notes, setNotes] = useState(item.notes || "");
 
   const handleFile = async (e) => {
     const file = e.target.files?.[0];
@@ -123,6 +124,15 @@ function ItemRow({ item, accentClass, onUpdate, onDelete }) {
           </button>
         )}
       </div>
+
+      <textarea
+        value={notes}
+        onChange={(e) => setNotes(e.target.value)}
+        onBlur={() => onUpdate({ notes })}
+        placeholder="Notes — measurements, contact person, what you liked, anything..."
+        rows={2}
+        className="w-full text-xs rounded-md px-2 py-1.5 border border-line resize-none mt-2"
+      />
     </div>
   );
 }
@@ -153,9 +163,20 @@ function EventCard({ event, department, theme, guestCount }) {
   }, [event.id]);
 
   const addItem = async () => {
+    const defaultType = "venue";
+    const competingConsidering = items.filter(
+      (i) => i.item_type === defaultType && i.status === "considering"
+    );
+    const shouldAutoLead = competingConsidering.length === 0; // first option of its kind counts automatically
     const { data } = await supabase
       .from("event_items")
-      .insert({ event_id: event.id, item_type: "venue", name: "New item", status: "considering" })
+      .insert({
+        event_id: event.id,
+        item_type: defaultType,
+        name: "New item",
+        status: "considering",
+        is_lead_option: shouldAutoLead,
+      })
       .select()
       .single();
     if (data) setItems([...items, data]);
