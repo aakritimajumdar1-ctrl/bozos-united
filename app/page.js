@@ -87,17 +87,17 @@ export default function HubPage() {
       <Nav profile={profile} can={can} />
       <div className="max-w-2xl mx-auto px-4 sm:px-6 py-10">
         <div className="relative text-center pb-9">
-          <svg width="46" height="46" viewBox="0 0 46 46" className="mx-auto mb-2 opacity-70">
+          <svg width="46" height="46" viewBox="0 0 46 46" className="mx-auto mb-2 opacity-80">
             <path
               d="M23 6c-6 6-6 13 0 19 6-6 6-13 0-19z"
               fill="none"
-              stroke="#C79A46"
+              stroke="#7A1F2B"
               strokeWidth="1.2"
             />
             <path
               d="M23 23c-9 0-15 7-15 16 9 2 16-3 15-16z"
               fill="none"
-              stroke="#C79A46"
+              stroke="#1B3A5C"
               strokeWidth="1.2"
             />
             <path
@@ -108,25 +108,25 @@ export default function HubPage() {
             />
           </svg>
           <div className="font-display text-4xl sm:text-5xl font-semibold text-ink tracking-tight">
-            Aakriti <span className="italic font-normal text-gold">and</span> Riley
+            Aakriti <span className="italic font-normal text-maroon">and</span> Riley
           </div>
           <div className="ornament-divider my-3">
-            <span className="line" />
-            <Sparkles size={13} className="text-gold" />
-            <span className="line" />
+            <span className="line" style={{ background: "linear-gradient(90deg, transparent, #7A1F2B, transparent)" }} />
+            <Sparkles size={13} className="text-navy" />
+            <span className="line" style={{ background: "linear-gradient(90deg, transparent, #1B3A5C, transparent)" }} />
           </div>
           <div className="text-sm tracking-wide text-inksoft">Bozos united</div>
         </div>
 
         {(can("guests") || can("budget")) && (
           <div className="grid grid-cols-3 gap-2.5 mb-8">
-            <Link href="/calendar" className="gilded-card gold-top p-3 text-center hover:-translate-y-0.5 transition-transform">
-              <CalendarDays size={16} className="mx-auto mb-1 text-gold" />
+            <Link href="/calendar" className="gilded-card navy-top p-3 text-center hover:-translate-y-0.5 transition-transform">
+              <CalendarDays size={16} className="mx-auto mb-1 text-navy" />
               <div className="text-xs text-inksoft">Calendar</div>
             </Link>
             {can("guests") && (
-              <Link href="/guests" className="gilded-card gold-top p-3 text-center hover:-translate-y-0.5 transition-transform">
-                <Users size={16} className="mx-auto mb-1 text-gold" />
+              <Link href="/guests" className="gilded-card maroon-top p-3 text-center hover:-translate-y-0.5 transition-transform">
+                <Users size={16} className="mx-auto mb-1 text-maroon" />
                 <div className="text-sm font-semibold font-mono text-ink">{stats.guests}</div>
                 <div className="text-[10px] text-inksoft">guests</div>
               </Link>
@@ -179,9 +179,9 @@ export default function HubPage() {
         {activity.length > 0 && (
           <div className="mt-10">
             <div className="ornament-divider mb-3">
-              <span className="line" />
-              <span className="text-xs tracking-wide text-inksoft font-display italic">Recent activity</span>
-              <span className="line" />
+              <span className="line" style={{ background: "linear-gradient(90deg, transparent, #1B3A5C, transparent)" }} />
+              <span className="text-xs tracking-wide text-navy font-display italic">Recent activity</span>
+              <span className="line" style={{ background: "linear-gradient(90deg, transparent, #1B3A5C, transparent)" }} />
             </div>
             <div className="space-y-1.5">
               {activity.map((a) => (
