@@ -10,6 +10,8 @@ module.exports = {
         inksoft: "#6B6070",
         line: "#E9E0D2",
         gold: "#C79A46",
+        navy: "#1B3A5C",
+        maroon: "#7A1F2B",
         indian: {
           DEFAULT: "#9C3B4C",
           soft: "#FAEEDA",
