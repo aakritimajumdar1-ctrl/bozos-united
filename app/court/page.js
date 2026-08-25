@@ -28,9 +28,19 @@ export default function CourtPage() {
     <div className="min-h-screen">
       <Nav profile={profile} can={can} />
       <div className="max-w-2xl mx-auto px-4 sm:px-6 py-8">
-        <div className="flex items-center gap-3 mb-6">
-          <theme.Icon className={theme.textClass} size={26} />
-          <div className="font-display text-2xl font-semibold text-ink">{theme.label}</div>
+        <div
+          className="flex items-center gap-4 rounded-2xl px-5 py-5 mb-6"
+          style={{
+            background: `linear-gradient(135deg, ${theme.softHex} 0%, #FFFFFF 75%)`,
+            border: `1px solid ${theme.hex}33`,
+            borderTop: `3px solid ${theme.hex}`,
+            boxShadow: "0 3px 16px rgba(74,27,12,0.06)",
+          }}
+        >
+          <div className="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: theme.hex }}>
+            <theme.Icon size={22} color="#FFFFFF" />
+          </div>
+          <div className="font-display text-2xl font-semibold" style={{ color: theme.deepHex }}>{theme.label}</div>
         </div>
         <DepartmentBoard department="court" theme={theme} />
       </div>
