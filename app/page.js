@@ -2,11 +2,39 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Sparkles, ArrowRight } from "lucide-react";
+import { ArrowRight, Sparkles, Users, Wallet, CalendarDays } from "lucide-react";
 import { useAuth } from "@/lib/useAuth";
 import { supabase } from "@/lib/supabaseClient";
 import { DEPARTMENT_LIST } from "@/lib/departments";
 import Nav from "@/components/Nav";
+
+function DepartmentCard({ d, big }) {
+  return (
+    <Link
+      href={`/${d.slug}`}
+      className="group flex items-center gap-4 rounded-2xl px-5 py-4 transition-transform hover:-translate-y-0.5"
+      style={{
+        background: `linear-gradient(135deg, ${d.softHex} 0%, #FFFFFF 70%)`,
+        border: `1px solid ${d.hex}33`,
+        boxShadow: "0 3px 16px rgba(74,27,12,0.07)",
+        borderTop: `3px solid ${d.hex}`,
+      }}
+    >
+      <div
+        className="flex-shrink-0 w-11 h-11 rounded-full flex items-center justify-center"
+        style={{ backgroundColor: d.hex }}
+      >
+        <d.Icon size={big ? 22 : 19} color="#FFFFFF" />
+      </div>
+      <div className="flex-1">
+        <div className={`font-display font-semibold ${big ? "text-lg" : "text-base"}`} style={{ color: d.deepHex }}>
+          {d.label}
+        </div>
+      </div>
+      <ArrowRight size={17} className="group-hover:translate-x-0.5 transition-transform" style={{ color: d.hex }} />
+    </Link>
+  );
+}
 
 export default function HubPage() {
   const { profile, loading, can } = useAuth();
@@ -58,72 +86,86 @@ export default function HubPage() {
     <div className="min-h-screen">
       <Nav profile={profile} can={can} />
       <div className="max-w-2xl mx-auto px-4 sm:px-6 py-10">
-        <div className="text-center pb-8">
-          <div className="font-display text-3xl sm:text-4xl font-semibold text-ink">Aakriti and Riley</div>
-          <div className="flex items-center justify-center gap-3 my-3">
-            <div className="w-14 h-px bg-ink/20" />
-            <Sparkles size={14} className="text-inksoft" />
-            <div className="w-14 h-px bg-ink/20" />
+        <div className="relative text-center pb-9">
+          <svg width="46" height="46" viewBox="0 0 46 46" className="mx-auto mb-2 opacity-70">
+            <path
+              d="M23 6c-6 6-6 13 0 19 6-6 6-13 0-19z"
+              fill="none"
+              stroke="#C79A46"
+              strokeWidth="1.2"
+            />
+            <path
+              d="M23 23c-9 0-15 7-15 16 9 2 16-3 15-16z"
+              fill="none"
+              stroke="#C79A46"
+              strokeWidth="1.2"
+            />
+            <path
+              d="M23 23c9 0 15 7 15 16-9 2-16-3-15-16z"
+              fill="none"
+              stroke="#C79A46"
+              strokeWidth="1.2"
+            />
+          </svg>
+          <div className="font-display text-4xl sm:text-5xl font-semibold text-ink tracking-tight">
+            Aakriti <span className="italic font-normal text-gold">and</span> Riley
           </div>
-          <div className="text-sm text-inksoft">Bozos united</div>
-        </div>
-
-        <div className="flex gap-2 mb-8">
-          <Link href="/calendar" className="flex-1 bg-card border border-line rounded-xl p-4 hover:border-inksoft text-center">
-            <div className="text-sm font-medium text-ink">Open calendar</div>
-          </Link>
+          <div className="ornament-divider my-3">
+            <span className="line" />
+            <Sparkles size={13} className="text-gold" />
+            <span className="line" />
+          </div>
+          <div className="text-sm tracking-wide text-inksoft">Bozos united</div>
         </div>
 
         {(can("guests") || can("budget")) && (
-          <div className="grid grid-cols-2 gap-3 mb-8">
+          <div className="grid grid-cols-3 gap-2.5 mb-8">
+            <Link href="/calendar" className="gilded-card gold-top p-3 text-center hover:-translate-y-0.5 transition-transform">
+              <CalendarDays size={16} className="mx-auto mb-1 text-gold" />
+              <div className="text-xs text-inksoft">Calendar</div>
+            </Link>
             {can("guests") && (
-              <Link href="/guests" className="bg-card border border-line rounded-xl p-4 hover:border-inksoft">
-                <div className="text-xs text-inksoft mb-1">Guests invited</div>
-                <div className="text-xl font-semibold font-mono text-ink">{stats.guests}</div>
+              <Link href="/guests" className="gilded-card gold-top p-3 text-center hover:-translate-y-0.5 transition-transform">
+                <Users size={16} className="mx-auto mb-1 text-gold" />
+                <div className="text-sm font-semibold font-mono text-ink">{stats.guests}</div>
+                <div className="text-[10px] text-inksoft">guests</div>
               </Link>
             )}
             {can("budget") && (
-              <Link href="/budget" className="bg-card border border-line rounded-xl p-4 hover:border-inksoft">
-                <div className="text-xs text-inksoft mb-1">Projected · booked</div>
-                <div className="text-xl font-semibold font-mono text-ink">
-                  ${Math.round(stats.projected).toLocaleString()} · ${Math.round(stats.booked).toLocaleString()}
+              <Link href="/budget" className="gilded-card gold-top p-3 text-center hover:-translate-y-0.5 transition-transform">
+                <Wallet size={16} className="mx-auto mb-1 text-gold" />
+                <div className="text-xs font-semibold font-mono text-ink">
+                  ${Math.round(stats.booked).toLocaleString()}
                 </div>
+                <div className="text-[10px] text-inksoft">of ${Math.round(stats.projected).toLocaleString()}</div>
               </Link>
             )}
           </div>
         )}
 
-        {indianDept && (
-          <Link
-            href={`/${indianDept.slug}`}
-            className="flex items-center gap-4 bg-indian-soft border-t-2 border-b-2 border-gold rounded-xl px-5 py-4 mb-3 hover:opacity-90"
-          >
-            <indianDept.Icon className="text-indian-accent flex-shrink-0" size={24} />
-            <div className="flex-1 font-display text-lg font-semibold text-indian-deep">{indianDept.label}</div>
-            <ArrowRight className="text-indian-accent" size={17} />
-          </Link>
-        )}
-
-        <div className="flex flex-col">
+        <div className="flex flex-col gap-3">
+          {indianDept && <DepartmentCard d={indianDept} big />}
           {otherDepartments.map((d) => (
-            <Link
-              key={d.slug}
-              href={`/${d.slug}`}
-              className="flex items-center gap-4 px-1 py-4 border-t border-line hover:bg-white/40"
-            >
-              <d.Icon className={d.textClass} size={20} />
-              <div className="flex-1 font-display text-base font-medium text-ink">{d.label}</div>
-              <ArrowRight className="text-inksoft" size={16} />
-            </Link>
+            <DepartmentCard key={d.slug} d={d} />
           ))}
           {can("prep") && (
             <Link
               href="/prep"
-              className="flex items-center gap-4 px-1 py-4 border-t border-b border-line hover:bg-white/40"
+              className="group flex items-center gap-4 rounded-2xl px-5 py-4 transition-transform hover:-translate-y-0.5"
+              style={{
+                background: "linear-gradient(135deg, #FAEEDA 0%, #FFFFFF 70%)",
+                border: "1px solid #854F0B33",
+                boxShadow: "0 3px 16px rgba(74,27,12,0.07)",
+                borderTop: "3px solid #854F0B",
+              }}
             >
-              <Sparkles className="text-prep" size={20} />
-              <div className="flex-1 font-display text-base font-medium text-ink">Wedding prep</div>
-              <ArrowRight className="text-inksoft" size={16} />
+              <div className="flex-shrink-0 w-11 h-11 rounded-full flex items-center justify-center" style={{ backgroundColor: "#854F0B" }}>
+                <Sparkles size={19} color="#FFFFFF" />
+              </div>
+              <div className="flex-1 font-display text-base font-semibold" style={{ color: "#633806" }}>
+                Wedding prep
+              </div>
+              <ArrowRight size={17} className="group-hover:translate-x-0.5 transition-transform" style={{ color: "#854F0B" }} />
             </Link>
           )}
         </div>
@@ -136,10 +178,14 @@ export default function HubPage() {
 
         {activity.length > 0 && (
           <div className="mt-10">
-            <div className="font-display text-base font-medium text-ink mb-2">Recent activity</div>
-            <div className="space-y-1">
+            <div className="ornament-divider mb-3">
+              <span className="line" />
+              <span className="text-xs tracking-wide text-inksoft font-display italic">Recent activity</span>
+              <span className="line" />
+            </div>
+            <div className="space-y-1.5">
               {activity.map((a) => (
-                <div key={a.id} className="text-xs text-inksoft">
+                <div key={a.id} className="text-xs text-inksoft gilded-card px-3 py-2">
                   <span className="text-ink font-medium">{a.changed_by_name}</span> {a.summary}
                   <span className="text-inksoft/70"> · {new Date(a.created_at).toLocaleString()}</span>
                 </div>
